@@ -178,7 +178,7 @@ void guidance_v_module_run(bool in_flight)
   
 
 // Altitude control old
-  z_cmd = -1.75; 
+  z_cmd = -1.0; 
   z_measured = dr_state.z;//stateGetPositionUtm_f()->alt; //TODO check sign (may be MSL)
   zv_measured = (z_measured -prev_meas_z)*512.; 
   

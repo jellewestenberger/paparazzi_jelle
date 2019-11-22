@@ -114,7 +114,7 @@ void control_run(float dt)
    dr_state.vy = vel_gps->y;
    
    // transform  velocity to body frame 
-   float vxb = dr_state.vx*(cosf(theta_meas)*cosf(psi_meas))+dr_state.vy*cosf(theta_meas)*sinf(psi);
+   float vxb = dr_state.vx*(cosf(theta_meas)*cosf(psi_meas))+dr_state.vy*cosf(theta_meas)*sinf(psi_meas);
    float vyb = dr_state.vx*(sinf(phi_meas)*sinf(theta_meas)*cosf(psi_meas)-cosf(phi_meas)*sinf(psi_meas)) +
     dr_state.vy * (sinf(phi_meas)*sinf(theta_meas)*sinf(psi_meas)+cosf(phi_meas)*cosf(psi_meas)); 
 
@@ -146,8 +146,9 @@ void control_run(float dt)
 
   float centriterm = DIRECTION*atan2f(absvel * cosf(dr_state.theta), (abs(GRAVITY) * dist2target));
 
-
-  dr_control.phi_cmd = find_roll(vxb,phi_meas,psi_meas,dr_state.x,dr_state.y,0.0,0.0);
+ 
+  float test_roll = find_roll(vxb,phi_meas,psi_meas,dr_state.x,dr_state.y,0.0,0.0);
+  dr_control.phi_cmd =0.;
   // dr_control.phi_cmd = (KP_POS*radiuserror) + (POS_I * KI_POS) + centriterm; //fix sign for direction of circle 
   dr_control.phi_cmd = bound_angle(dr_control.phi_cmd,CTRL_MAX_ROLL);
 //   if(dr_control.phi_cmd>CTRL_MAX_ROLL){
@@ -171,14 +172,18 @@ void control_run(float dt)
   lookI = lookI + ang/512.0;
   // lookahead = lookahead + lookI * KI_look;  //increase lookahead angle with error between velocity and desired velocity vector;
   // float psi_cmd = phase_angle +(DIRECTION*0.5*PI) + lookahead + lookI * KI_look + KP_look * ang ;   
-  float psi_cmd = find_yaw(psi_meas,phi_meas,vxb,512.0); 
+  float psi_cmd = 0;//find_yaw(psi_meas,phi_meas,vxb,512.0); 
   dr_control.psi_cmd = angle180(psi_cmd*180.0/PI)*PI/180.0;
 
   dr_control.theta_cmd = PITCHFIX ;
   dr_control.theta_cmd = bound_angle(dr_control.theta_cmd,CTRL_MAX_PITCH);
 
-  printf("posx: %f, posy: %f, PosR: %f, ang1: %f, ang2: %f, ang: %f, LookI: %f, Vx: %f, Vy: %f\n",dr_state.x, dr_state.y, dist2target,ang1*180./PI,ang2*180/PI,ang*180./PI,lookI*180/PI,dr_state.vx,dr_state.vy);
+  // printf("testroll: %f\n",test_roll*r2d);
 
+  // printf("tx: %f, pos_x: %f, ty: %f, posy: %f, roll_cmd: %f, roll: %f, psi_cmd: %f, psi: %f \n",0,dr_state.x,0,dr_state.y,test_roll*r2d,phi_meas*r2d,dr_control.psi_cmd*r2d,psi_meas*r2d);
+
+  dr_control.phi_cmd=0; 
+  dr_control.theta_cmd=0;
   static int counter = 0;
   fprintf(file_logger_t, "%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f, %f, %f, %f, %f, %f, %f, %f, %f\n", counter, dr_control.theta_cmd, dr_control.phi_cmd, theta_meas,phi_meas,dr_state.x,dr_state.y, dist2target, phase_angle,rxb,ryb,centriterm, 
   dr_control.psi_cmd,psi_meas,dr_state.vx,dr_state.vy,rx,ry,radiuserror,ang1,ang2,ang);

@@ -5,77 +5,108 @@
 #define r2d 1.0/d2r
 
 #define MAX_ROLL_RATE 50.0*d2r
-float v;
-float phi;
-float psi;
-float x;
-float y;
-float tx;
-float ty;
-float predict(float roll_cmd){
- 
+float t_v;
+float t_phi;
+float t_psi;
+float t_x;
+float t_y;
+float t_tx;
+float t_ty;
+
+float predict(float t_roll_cmd){
+    
+    
     const float prop_dt = 0.1;
 
     // saveguard no divide by zero
-    if(v < 1){
-        v = 1; 
+    if(t_v < 1){
+        t_v = 1; 
     }
  
 
     float apo2 = 1e20; 
-
-    for(int i =0; i <35; i=i=1){
-        float delta_phi = roll_cmd - phi;
-    if(delta_phi>MAX_ROLL_RATE){
-        delta_phi = MAX_ROLL_RATE;
+    
+    for(int i =0; i <15 ; i=i+1){
+      
+        
+        float t_delta_phi = t_roll_cmd - t_phi;
+    if(t_delta_phi>MAX_ROLL_RATE){
+        t_delta_phi = MAX_ROLL_RATE;
     }
-    if(delta_phi<-MAX_ROLL_RATE){
-        delta_phi=-MAX_ROLL_RATE;
+    if(t_delta_phi<-MAX_ROLL_RATE){
+        t_delta_phi=-MAX_ROLL_RATE;
     }
 
-        phi = phi + delta_phi * prop_dt;
+        t_phi = t_phi + t_delta_phi * prop_dt;
+      
+        float delayed_psi = t_psi;
 
-        float delayed_psi = psi;
+        float dpsidt  = tanf(t_phi) * 9.81 / t_v;
+        t_psi = t_psi + dpsidt*prop_dt; 
 
-        float dpsidt  = tanf(phi) * 9.81 / v;
-        psi = psi + dpsidt*prop_dt; 
+        t_x = t_x + cosf(delayed_psi) * t_v * prop_dt;
+        t_y = t_y + sinf(delayed_psi) * t_v * prop_dt;
 
-        x = x + cosf(delayed_psi) * v * prop_dt;
-        y = y + sinf(delayed_psi) * v * prop_dt;
-
-        float d2 = (tx-x)*(tx-x)+(ty-y)*(ty-y);
+        float d2 = (t_tx-t_x)*(t_tx-t_x)+(t_ty-t_y)*(t_ty-t_y);
 
         if(d2<apo2){
             apo2= d2;
         }
+        
+
     }
+    
     return apo2;
 }
 
 
-float find_roll(v, phi, psi, x, y, tx ,ty) { 
+float find_roll(t_v, t_phi, t_psi, t_x, t_y, t_tx ,t_ty) { 
+    // printf("test4");
     float best = 0; 
     float  bestcost = 1e30; 
-    for(float roll = -45*d2r; roll<45*d2r; roll= roll + 1*d2r){
-        float cost = predict(roll);
+    float min = -45*d2r;
+    float max = 45*d2r; 
+    float costmin = predict(min);
+    float costmax = predict(max);
+
+    for(int j=1; j<10; j=j+1){
+        if(costmin<costmax){
+            max = (max+min)/2.0;
+            costmax = predict(max);
+            // printf("it %d, mincost: %f\n",j,costmin);
+        }
+        else{
+            min = (max+min)/2.0;
+            costmin=predict(min);
+            // printf("it %d, mincost: %f\n",j,costmax);
+        }
+    }
+    best=(max+min)/2.0;
+    /*
+    for(float t_roll = -45*d2r; t_roll<45*d2r; t_roll= t_roll + 1*d2r){
+        float cost = predict(t_roll);
         if(cost < bestcost){
-            best = roll;
+            best = t_roll;
             bestcost = cost; 
         }
     }
+    */
+
+
+    
     return best;
 }
 
-float find_yaw(float psi,float phi,float v,float drone_dt){
-    float dpsidt = (9.81/v)*tanf(phi);
-    psi=psi+(dpsidt*drone_dt);
+float find_yaw(float t_psi,float t_phi,float t_v,float drone_dt){
+    float dpsidt = (9.81/t_v)*tanf(t_phi);
+    t_psi=t_psi+(dpsidt*drone_dt);
     
-    while(psi>2*PI){
-        psi=psi-2*PI;
+    if(t_psi>2*PI){
+        t_psi=t_psi-2*PI;
     }
-    while(psi<-2*PI){
-        psi=psi+2*PI;
+    if(t_psi<-2*PI){
+        t_psi=t_psi+2*PI;
     }
 
-    return psi;
+    return t_psi;
 }
