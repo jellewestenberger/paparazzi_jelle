@@ -8,7 +8,7 @@
 #include "ransac.h"
 #include <math.h>
 #include "state.h"
-
+#include "predictor.h"
 // Variables
 struct dronerace_control_struct dr_control;
 
@@ -113,6 +113,10 @@ void control_run(float dt)
    dr_state.vx = vel_gps->x; // In earth reference frame
    dr_state.vy = vel_gps->y;
    
+   // transform  velocity to body frame 
+   float vxb = dr_state.vx*(cosf(theta_meas)*cosf(psi_meas))+dr_state.vy*cosf(theta_meas)*sinf(psi);
+   float vyb = dr_state.vx*(sinf(phi_meas)*sinf(theta_meas)*cosf(psi_meas)-cosf(phi_meas)*sinf(psi_meas)) +
+    dr_state.vy * (sinf(phi_meas)*sinf(theta_meas)*sinf(psi_meas)+cosf(phi_meas)*cosf(psi_meas)); 
 
   float dist2target = sqrtf(dr_state.x * dr_state.x + dr_state.y*dr_state.y);
   float absvel = (dr_state.vx * dr_state.vx + dr_state.vy*dr_state.vy);
@@ -141,7 +145,9 @@ void control_run(float dt)
   
 
   float centriterm = DIRECTION*atan2f(absvel * cosf(dr_state.theta), (abs(GRAVITY) * dist2target));
-  dr_control.phi_cmd = DIRECTION*(KP_POS *radiuserror + centriterm + POS_I * KI_POS);
+
+
+  dr_control.phi_cmd = find_roll(vxb,phi_meas,psi_meas,dr_state.x,dr_state.y,0.0,0.0);
   // dr_control.phi_cmd = (KP_POS*radiuserror) + (POS_I * KI_POS) + centriterm; //fix sign for direction of circle 
   dr_control.phi_cmd = bound_angle(dr_control.phi_cmd,CTRL_MAX_ROLL);
 //   if(dr_control.phi_cmd>CTRL_MAX_ROLL){
@@ -164,7 +170,8 @@ void control_run(float dt)
   }
   lookI = lookI + ang/512.0;
   // lookahead = lookahead + lookI * KI_look;  //increase lookahead angle with error between velocity and desired velocity vector;
-  float psi_cmd = phase_angle +(DIRECTION*0.5*PI) + lookahead + lookI * KI_look + KP_look * ang ;    
+  // float psi_cmd = phase_angle +(DIRECTION*0.5*PI) + lookahead + lookI * KI_look + KP_look * ang ;   
+  float psi_cmd = find_yaw(psi_meas,phi_meas,vxb,512.0); 
   dr_control.psi_cmd = angle180(psi_cmd*180.0/PI)*PI/180.0;
 
   dr_control.theta_cmd = PITCHFIX ;
