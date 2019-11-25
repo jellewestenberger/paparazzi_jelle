@@ -121,12 +121,13 @@ float find_yaw(float psi,float phi,float v,float drone_dt){
     float dpsidt = (9.81/v)*tanf(phi);
     psi=psi+(dpsidt*drone_dt);
     
-    if(psi>2*PI){
-        psi=psi-2*PI;
+    if(psi>(2*PI)){
+        psi=psi-(2*PI);
     }
-    if(psi<-2*PI){
-        psi=psi+2*PI;
+    if(psi<(-2*PI)){
+        psi=psi+(2*PI);
     }
+    printf("psi: %f\n",psi*r2d);
 
     return psi;
 }

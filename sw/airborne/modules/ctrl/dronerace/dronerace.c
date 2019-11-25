@@ -140,6 +140,7 @@ float psi0 = 0;
 void dronerace_enter(void)
 {
   psi0 = stateGetNedToBodyEulers_f()->psi;
+  dr_control.psi_cmd=psi0;
   filter_reset();
   control_reset();
 }

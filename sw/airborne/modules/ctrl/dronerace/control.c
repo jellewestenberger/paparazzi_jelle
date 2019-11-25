@@ -93,9 +93,9 @@ float bound_f(float val, float min, float max) {
 #define KD_VEL_Y  0.05
 #define radius_des 2
 float lookahead = 25 * PI/180.0;
-#define PITCHFIX  -2 * PI/180.0
+#define PITCHFIX  -10 * PI/180.0
 #define DIRECTION 1 // 1 for clockwise, -1 for counterclockwise
-
+float yaw_direction=1;
 void control_run(float dt)
 {
 
@@ -176,8 +176,14 @@ void control_run(float dt)
   lookI = lookI + ang/512.0;
   // lookahead = lookahead + lookI * KI_look;  //increase lookahead angle with error between velocity and desired velocity vector;
   // float psi_cmd = phase_angle +(DIRECTION*0.5*PI) + lookahead + lookI * KI_look + KP_look * ang ;   
-  float psi_cmd = find_yaw(psi_meas,phi_meas,vxb,512.0); 
-  dr_control.psi_cmd = angle180(psi_cmd*180.0/PI)*PI/180.0;
+  float psi_cmd = find_yaw(dr_control.psi_cmd,phi_meas,vxb,512.0); 
+  if(psi_cmd>PI){
+    psi_cmd=psi_cmd-2*PI;
+  }
+  if(psi_cmd<-PI){
+    psi_cmd=psi_cmd+2*PI;
+  }
+  dr_control.psi_cmd = psi_cmd;//angle180(psi_cmd*180.0/PI)*PI/180.0;
 
   dr_control.theta_cmd = PITCHFIX ;
   dr_control.theta_cmd = bound_angle(dr_control.theta_cmd,CTRL_MAX_PITCH);
@@ -186,7 +192,7 @@ void control_run(float dt)
 
   // printf("tx: %f, pos_x: %f, ty: %f, posy: %f, roll_cmd: %f, roll: %f, psi_cmd: %f, psi: %f \n",0,dr_state.x,0,dr_state.y,test_roll*r2d,phi_meas*r2d,dr_control.psi_cmd*r2d,psi_meas*r2d);
 
-  
+  printf("yaw_cmd: %f\n",dr_control.psi_cmd*r2d);
   
   static int counter = 0;
   // fprintf(file_logger_t, "%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f, %f, %f, %f, %f, %f, %f, %f, %f\n", counter, dr_control.theta_cmd, test_roll*r2d, theta_meas,phi_meas,dr_state.x,dr_state.y, dist2target, phase_angle,rxb,ryb,centriterm, 
