@@ -3,12 +3,12 @@
 
 
 #include "control.h"
-
+#include "predictor.h"
 #include "flightplan.h"
 #include "ransac.h"
 #include <math.h>
 #include "state.h"
-#include "predictor.h"
+// #include "predictor.h"
 // Variables
 struct dronerace_control_struct dr_control;
 
@@ -25,7 +25,7 @@ static void open_log(void)
 
   printf("\n\n*** chosen filename log drone race: %s ***\n\n", filename);
   file_logger_t = fopen(filename, "w+"); 
-  prediction_logger_t = fopen(filename2,"w+");
+  // prediction_logger_t = fopen(filename2,"w+");
 }
 
 
@@ -152,7 +152,9 @@ void control_run(float dt)
 
  
  // from predictor
-  dr_control.phi_cmd = find_roll(vxb,phi_meas,psi_meas,dr_state.x,dr_state.y,0.0,0.0);
+ 
+  
+  dr_control.phi_cmd =find_roll(vxb,phi_meas,psi_meas,dr_state.x,dr_state.y,0.0,0.0);
   
   dr_control.phi_cmd = bound_angle(dr_control.phi_cmd,CTRL_MAX_ROLL);
 

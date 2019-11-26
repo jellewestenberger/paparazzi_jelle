@@ -37,9 +37,10 @@
 #include "subsystems/imu.h"
 #include "subsystems/datalink/telemetry.h"
 #include "firmwares/rotorcraft/stabilization.h"
+#include "predictor.h"
 #include "boards/bebop/actuators.h"
 #include "pthread.h"
-#include "predictor.h"
+// #include "predictor.h"
 
 // to know if we are simulating:
 #include "generated/airframe.h"
@@ -122,6 +123,13 @@ static void gate_detected_cb(uint8_t sender_id __attribute__((unused)), int32_t 
 
 }
 
+
+void* main2(void* p) {
+  // 
+  // Sleep
+
+}
+
 void dronerace_init(void)
 {
   // Receive vision
@@ -133,7 +141,7 @@ void dronerace_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_OPTICAL_FLOW_HOVER, send_dronerace);
   register_periodic_telemetry(DefaultPeriodic,  PPRZ_MSG_ID_AHRS_ALPHAPILOT, send_alphapahrs);
 
-  pthread_create(&tid, NULL, predict,);
+  pthread_create(&tid, NULL, predict, NULL);
  //reset integral
   // Compute waypoints
   dronerace_enter();
