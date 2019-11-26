@@ -24,7 +24,7 @@ float predict(float roll_cmd, float xi, float yi,float v, float tx,float ty, flo
 
     float apo2 = 1e20; 
     
-    for(int i =0; i <15 ; i=i+1){
+    for(int i =0; i <10 ; i=i+1){
       
         
     float delta_phi = roll_cmd - phi;
@@ -117,17 +117,21 @@ float find_roll(float v, float phi, float psi, float xi, float yi, float tx ,flo
     return best;
 }
 
-float find_yaw(float psi,float phi,float v,float drone_dt){
-    float dpsidt = (9.81/v)*tanf(phi);
-    psi=psi+(dpsidt*drone_dt);
-    
-    if(psi>(2*PI)){
-        psi=psi-(2*PI);
+float find_yaw(float psi_cmd,float phi,float v,float drone_dt){
+     if(v < 1){
+        v = 1; 
     }
-    if(psi<(-2*PI)){
-        psi=psi+(2*PI);
-    }
-    printf("psi: %f\n",psi*r2d);
 
-    return psi;
+    float dpsidt = (9.81/v)*tanf(phi);
+    psi_cmd=psi_cmd+(dpsidt*drone_dt);
+    
+    while(psi_cmd>(PI)){
+        psi_cmd=psi_cmd-(2*PI);
+    }
+    while(psi_cmd<(-1*PI)){
+        psi_cmd=psi_cmd+(2*PI);
+    }
+    printf("psi: %f\n",psi_cmd*r2d);
+
+    return psi_cmd;
 }

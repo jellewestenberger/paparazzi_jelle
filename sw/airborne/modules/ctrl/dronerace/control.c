@@ -151,17 +151,11 @@ void control_run(float dt)
   float centriterm = DIRECTION*atan2f(absvel * cosf(dr_state.theta), (abs(GRAVITY) * dist2target));
 
  
+ // from predictor
   dr_control.phi_cmd = find_roll(vxb,phi_meas,psi_meas,dr_state.x,dr_state.y,0.0,0.0);
-  // dr_control.phi_cmd =0.;
-  // dr_control.phi_cmd = (KP_POS*radiuserror) + (POS_I * KI_POS) + centriterm; //fix sign for direction of circle 
+  
   dr_control.phi_cmd = bound_angle(dr_control.phi_cmd,CTRL_MAX_ROLL);
-//   if(dr_control.phi_cmd>CTRL_MAX_ROLL){
-//     dr_control.phi_cmd = CTRL_MAX_ROLL;
-//   }
 
-// if(dr_control.phi_cmd<(-1*(CTRL_MAX_ROLL))){
-//   dr_control.phi_cmd = -CTRL_MAX_ROLL;
-// }
   POS_I = POS_I + radiuserror/512.0;
   
   if(ang>(PI*30.0/180.)){
@@ -174,25 +168,20 @@ void control_run(float dt)
     ang=0;
   }
   lookI = lookI + ang/512.0;
-  // lookahead = lookahead + lookI * KI_look;  //increase lookahead angle with error between velocity and desired velocity vector;
-  // float psi_cmd = phase_angle +(DIRECTION*0.5*PI) + lookahead + lookI * KI_look + KP_look * ang ;   
-  float psi_cmd = find_yaw(dr_control.psi_cmd,phi_meas,vxb,512.0); 
-  if(psi_cmd>PI){
-    psi_cmd=psi_cmd-2*PI;
-  }
-  if(psi_cmd<-PI){
-    psi_cmd=psi_cmd+2*PI;
-  }
-  dr_control.psi_cmd = psi_cmd;//angle180(psi_cmd*180.0/PI)*PI/180.0;
+  
+
+  //from predictor:  
+  dr_control.psi_cmd = find_yaw(dr_control.psi_cmd,phi_meas,vxb,512.0); 
+
+
 
   dr_control.theta_cmd = PITCHFIX ;
   dr_control.theta_cmd = bound_angle(dr_control.theta_cmd,CTRL_MAX_PITCH);
 
-  // printf("testroll: %f\n",test_roll*r2d);
 
   // printf("tx: %f, pos_x: %f, ty: %f, posy: %f, roll_cmd: %f, roll: %f, psi_cmd: %f, psi: %f \n",0,dr_state.x,0,dr_state.y,test_roll*r2d,phi_meas*r2d,dr_control.psi_cmd*r2d,psi_meas*r2d);
 
-  printf("yaw_cmd: %f\n",dr_control.psi_cmd*r2d);
+  printf("yaw_cmd: %f, yaw_meas: %f\n",dr_control.psi_cmd*r2d,dr_state.psi*r2d);
   
   static int counter = 0;
   // fprintf(file_logger_t, "%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f, %f, %f, %f, %f, %f, %f, %f, %f\n", counter, dr_control.theta_cmd, test_roll*r2d, theta_meas,phi_meas,dr_state.x,dr_state.y, dist2target, phase_angle,rxb,ryb,centriterm, 

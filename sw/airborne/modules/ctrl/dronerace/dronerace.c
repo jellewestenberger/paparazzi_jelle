@@ -38,6 +38,8 @@
 #include "subsystems/datalink/telemetry.h"
 #include "firmwares/rotorcraft/stabilization.h"
 #include "boards/bebop/actuators.h"
+#include "pthread.h"
+#include "predictor.h"
 
 // to know if we are simulating:
 #include "generated/airframe.h"
@@ -126,13 +128,16 @@ void dronerace_init(void)
   //AbiBindMsgRELATIVE_LOCALIZATION(DRONE_RACE_ABI_ID, &gate_detected_ev, gate_detected_cb);
   POS_I = 0;
   lookI = 0;
+  pthread_t tid; 
   // Send telemetry
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_OPTICAL_FLOW_HOVER, send_dronerace);
   register_periodic_telemetry(DefaultPeriodic,  PPRZ_MSG_ID_AHRS_ALPHAPILOT, send_alphapahrs);
 
+  pthread_create(&tid, NULL, predict,);
  //reset integral
   // Compute waypoints
   dronerace_enter();
+  
 }
 
 bool start_log = 0;
