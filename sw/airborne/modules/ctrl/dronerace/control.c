@@ -173,7 +173,7 @@ void control_run(float dt)
   
 
   //from predictor:  
-  dr_control.psi_cmd = find_yaw(dr_control.psi_cmd,phi_meas,vxb,512.0); 
+  dr_control.psi_cmd = find_yaw(dr_control.psi_cmd,dr_control.phi_cmd,vxb,512.0); 
 
 
 

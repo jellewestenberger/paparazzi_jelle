@@ -60,6 +60,11 @@ float predict(float roll_cmd, float xi, float yi,float v, float tx,float ty, flo
             apo2= d2;
             
         }
+        else if (d2>apo2) //stop propagating when distance starts to increase again [EXPERIMENT]
+        {
+            break;
+        }
+        
         
 
     }
