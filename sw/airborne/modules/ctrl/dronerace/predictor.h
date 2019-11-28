@@ -9,10 +9,10 @@
 
 
 // FILE *prediction_logger_t= NULL;
-
+struct predict_input findroll_input; 
 
 float predict(float roll_cmd, float xi, float yi,float v, float tx,float ty, float phi, float psi);
 
-float find_roll(float v, float phi, float psi, float xi, float yi, float tx ,float ty);
+float find_roll(struct predict_input findroll_input);
 
 float find_yaw(float psi_cmd,float phi,float v,float drone_dt);

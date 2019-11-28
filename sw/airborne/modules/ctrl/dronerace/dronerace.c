@@ -40,6 +40,10 @@
 #include "predictor.h"
 #include "boards/bebop/actuators.h"
 #include "pthread.h"
+#include "predict_thread.h"
+
+//initialize predict variables:
+
 // #include "predictor.h"
 
 // to know if we are simulating:
@@ -123,11 +127,35 @@ static void gate_detected_cb(uint8_t sender_id __attribute__((unused)), int32_t 
 
 }
 
+// MT
 
+// Input
+// volatile struct predict_input; //initialized in control.c
+// Output
+volatile bool work;
+volatile bool hasresult;
+volatile float optimized_roll;
+ 
+int it= 0; 
 void* main2(void* p) {
+  work = false;
+  hasresult=false;
   // 
-  // Sleep
+  while (true)
+  {
 
+    if (work) {
+        hasresult = true;
+        optimized_roll=find_roll(pred_inputs);
+        hasresult= true;
+        work = false;
+      
+    }
+    
+   
+  // Sleep
+  sys_time_usleep(100);
+  }
 }
 
 void dronerace_init(void)
@@ -141,7 +169,7 @@ void dronerace_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_OPTICAL_FLOW_HOVER, send_dronerace);
   register_periodic_telemetry(DefaultPeriodic,  PPRZ_MSG_ID_AHRS_ALPHAPILOT, send_alphapahrs);
 
-  pthread_create(&tid, NULL, predict, NULL);
+  pthread_create(&tid, NULL, main2, NULL);
  //reset integral
   // Compute waypoints
   dronerace_enter();

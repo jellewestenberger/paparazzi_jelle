@@ -19,6 +19,7 @@
   <header>
     <file name="ctrl_module_outerloop_demo.h"/>
     <file name="dronerace/dronerace.h"/>
+    <file name ="dronerace/predict_thread.h"/>
   </header>
   
   <periodic fun="dronerace_periodic()"/>
