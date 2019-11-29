@@ -20,7 +20,11 @@ struct dronerace_fp_struct
   float z_set;
 };
 
-
+struct predict_simpleWP_struct{
+  int wp_i;
+  float wp_x;
+  float wp_y; 
+};
 # define MAX_DETECTION 2
 
 struct jungle_gate_struct
@@ -64,7 +68,8 @@ struct dronerace_flightplan_item_struct
 extern const struct dronerace_flightplan_item_struct gates[MAX_GATES];
 extern struct dronerace_flightplan_item_struct waypoints_dr[MAX_GATES];
 extern struct jungle_gate_struct jungleGate;
-
+extern struct predict_simpleWP_struct waypoints_circle[MAX_GATES]; 
+extern int wp_id;
 // Functions
 extern void flightplan_reset(void);
 extern void flightplan_run(void);

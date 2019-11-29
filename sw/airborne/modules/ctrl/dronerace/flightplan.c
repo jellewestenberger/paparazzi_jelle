@@ -9,6 +9,8 @@
 struct dronerace_fp_struct dr_fp;
 
 struct jungle_gate_struct jungleGate;
+
+
 void checkJungleGate(void);
 void generate_waypoints_from_gates(void);
 
@@ -22,7 +24,13 @@ const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
 };
 */
 
-
+struct predict_simpleWP_struct waypoints_circle[MAX_GATES] = { 
+  //id, x,  y 
+    {0, 2.75,  0},
+    {1, 0.25,  -3.1},
+    {2, -2.85,  -1},
+    {3, -0.25,  2.7},
+};
 
 // Note: pprz has positive Z here, while jevois has negative Z
 // both_side: bool in Jevois code, 0 or 1 here.
@@ -34,6 +42,8 @@ const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
   {   0,            4.5,        -1.2,          RadOfDeg(0),     1.0f,    REGULAR,      BRAKE,          0.0,                      0},
   {   0,            0,          -1.2,          RadOfDeg(0),     1.0f,    REGULAR,      BRAKE,          0.0,                      0},
 };
+
+
 
 struct dronerace_flightplan_item_struct waypoints_dr[MAX_GATES];
 

@@ -25,6 +25,7 @@ static void open_log(void)
   char filename[512];
   char filename2[512];
   char filename3[512];
+  
   // Check for available files
   sprintf(filename, "%s/%s.csv", STRINGIFY(FILE_LOGGER_PATH), "lllllog_file");
   sprintf(filename2, "%s/%s.csv", STRINGIFY(FILE_LOGGER_PATH), "predict_prop");
@@ -32,6 +33,7 @@ static void open_log(void)
 
   printf("\n\n*** chosen filename log drone race: %s ***\n\n", filename);
   file_logger_t = fopen(filename, "w+"); 
+  predic_prop_t = fopen(filename2,"w+");
   predic_logger = fopen(filename3, "w+"); 
   // prediction_logger_t = fopen(filename2,"w+");
 }
@@ -43,7 +45,7 @@ static void open_log(void)
 // Slow speed
 #define CTRL_MAX_SPEED  6.0             // m/s
 #define CTRL_MAX_PITCH  RadOfDeg(18)    // rad
-#define CTRL_MAX_ROLL   RadOfDeg(35)    // rad
+#define CTRL_MAX_ROLL   RadOfDeg(45)    // rad
 #define CTRL_MAX_R      RadOfDeg(90)    // rad/sec
 
 float bound_angle(float angle, float max_angle){
@@ -101,9 +103,13 @@ float bound_f(float val, float min, float max) {
 #define KD_VEL_Y  0.05
 #define radius_des 2
 float lookahead = 25 * PI/180.0;
-#define PITCHFIX  -10 * PI/180.0
+#define PITCHFIX  -8 * PI/180.0
 #define DIRECTION 1 // 1 for clockwise, -1 for counterclockwise
+float posx_old = 1234234;
+float posy_old = 1123;
 float yaw_direction=1;
+float phi_meas_avg; 
+float avg_cntr=1;
 void control_run(float dt)
 {
 
@@ -174,17 +180,31 @@ void control_run(float dt)
    
 
   // export -> t
+  if((dr_state.x!=posx_old)&&(dr_state.y!=posy_old)){ //only run optimizer if a new position reading is available
   pred_inputs.v = vxb_plane;
   pred_inputs.xi = dr_state.x; 
   pred_inputs.yi = dr_state.y;
-  pred_inputs.tx = 0.0;
-  pred_inputs.ty = 0.0;
+  pred_inputs.tx = waypoints_circle[wp_id].wp_x;
+  pred_inputs.ty = waypoints_circle[wp_id].wp_y;
   pred_inputs.phi = phi_meas; 
   pred_inputs.psi = psi_meas; 
   
   work = true;
-  printf("optimized roll: %f\n",optimized_roll);
+  // printf("optimized roll: %f\n",optimized_roll);
+  optimized_roll=bound_angle(optimized_roll,CTRL_MAX_ROLL);
   dr_control.phi_cmd  = optimized_roll;// find_roll(vxb_plane,phi_meas,psi_meas,dr_state.x,dr_state.y,0.0,0.0);
+  pred_inputs.range_a = optimized_roll - 5 * d2r;
+  pred_inputs.range_b = optimized_roll + 5 * d2r;
+  posx_old=dr_state.x;
+  posy_old=dr_state.y;
+  
+  phi_meas_avg=0;
+  avg_cntr = 1.0; 
+  }
+  else{ //if no new position measurements are available use this loop to average the roll measurements; 
+    phi_meas_avg += phi_meas/avg_cntr; 
+    avg_cntr+=1.0;
+  }
   
   
 
@@ -218,6 +238,7 @@ void control_run(float dt)
 
   // printf(" yaw_cmd: %f, yaw_meas: %f\n",dr_control.psi_cmd*r2d,dr_state.psi*r2d);
   static int counter = 0;
+  // printf("x: %f, y: %f\n",dr_state.x,dr_state.y);
   fprintf(predic_logger, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n", get_sys_time_float(),dr_state.x,dr_state.y,dr_control.phi_cmd,dr_control.theta_cmd,dr_control.psi_cmd, phi_meas, theta_meas, psi_meas, dr_state.vx, dr_state.vy,vxb_plane);
   counter++;
   

@@ -1,11 +1,13 @@
 #include "predictor.h"
 #include "predict_thread.h"
+#include "subsystems/datalink/telemetry.h"
+
 #define PI 3.14159265359
 #define d2r  PI/180.0 
 #define r2d 1.0/d2r
 #define GR (1.0 + sqrtf(5))/2.0
 
-#define MAX_ROLL_RATE 50.0*d2r
+#define MAX_ROLL_RATE 50*d2r
 
 
 
@@ -13,7 +15,7 @@ int optcounter= 0;
 
 float predict(float roll_cmd, float xi, float yi,float v, float tx,float ty, float phi, float psi){
     
-    
+    float phi_i =phi;
     const float prop_dt = 0.1;
     float x = xi; 
     float y = yi; 
@@ -55,15 +57,18 @@ float predict(float roll_cmd, float xi, float yi,float v, float tx,float ty, flo
         y = y + sinf(delayed_psi) * v * prop_dt;
 
         float d2 = (tx-x)*(tx-x)+(ty-y)*(ty-y);
-        // fprintf(prediction_logger_t,"%f, %f, %f, %f, %f, %f, %f\n",x,y,xi,yi,v,phi,roll_cmd,psi,d2);
+        
+        // fprintf(predic_prop_t,"%f, %f\n",tx,ty)s;
+        // fprintf(predic_prop_t,"%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",x,y,xi,yi,v,phi,roll_cmd,get_sys_time_float(),d2,tx,ty,phi_i);
+        //  printf("tx: %f, ty: %f\n",tx,ty);
         if(d2<apo2){
             apo2= d2;
             
         }
-        else if (d2>apo2) //stop propagating when distance starts to increase again [EXPERIMENT]
-        {
-            break;
-        }
+        // else if (d2>apo2) //stop propagating when distance starts to increase again [EXPERIMENT]
+        // {
+        //     break;
+        // }
         
         
 
@@ -84,16 +89,17 @@ float find_roll(struct predict_input findroll_input) {
     // printf("test4");
     float best = 0; 
     float bestcost = 1e30; 
-    float a = -45*d2r;
-    float b = 45*d2r;
-    
+    float a = findroll_input.range_a;
+    float b = findroll_input.range_b;
+    printf("range a: %f, range b: %f\n",a*180./3.1459,b*180.0/3.1459);
+   
     
    
     float cost_a = predict(a,xi,yi, v, tx, ty, phi, psi);
     float cost_b = predict(b,xi,yi, v, tx, ty, phi, psi); 
     
     //normal bisection;
-    for(int j=1; j<10; j=j+1){
+    for(int j=1; j<20; j=j+1){
         if(cost_a<cost_b){
             b = (a+b)/2.0;
             cost_b = predict(b,xi,yi, v, tx, ty, phi, psi); 
@@ -107,9 +113,10 @@ float find_roll(struct predict_input findroll_input) {
             bestcost=cost_b;
         }
         
-        if(fabs(b-a)<0.1){
+        if(fabs(b-a)<0.001){
             break;
         }   
+        // printf("phi: %f\n",phi);
 
     }
     return best; 

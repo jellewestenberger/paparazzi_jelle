@@ -14,6 +14,12 @@ volatile struct predict_input{
     float ty; 
     float phi;
     float psi; 
+    float range_a;
+    float range_b;
 };
 extern volatile struct predict_input pred_inputs; 
+
+
+FILE *predic_prop_t; 
+
 #endif

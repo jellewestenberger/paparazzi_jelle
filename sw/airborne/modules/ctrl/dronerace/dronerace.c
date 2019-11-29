@@ -58,6 +58,7 @@ float input_phi;
 float input_theta;
 float input_psi;
 
+
 volatile int input_cnt = 0;
 volatile float input_dx = 0;
 volatile float input_dy = 0;
@@ -75,10 +76,11 @@ struct dronerace_control_struct dr_control;
 struct FloatEulers *rot; 
 struct NedCoor_f *pos;   
 struct FloatRates *rates;
-
+int wp_id;
 float posx;
 float posy;
 float posz;
+float dist2target; 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // TELEMETRY
 
@@ -159,7 +161,8 @@ void* main2(void* p) {
 }
 
 void dronerace_init(void)
-{
+{ 
+  wp_id = 0; 
   // Receive vision
   //AbiBindMsgRELATIVE_LOCALIZATION(DRONE_RACE_ABI_ID, &gate_detected_ev, gate_detected_cb);
   POS_I = 0;
@@ -180,10 +183,12 @@ bool start_log = 0;
 float psi0 = 0;
 void dronerace_enter(void)
 {
+   wp_id=0;
   psi0 = stateGetNedToBodyEulers_f()->psi;
   dr_control.psi_cmd=psi0;
   filter_reset();
   control_reset();
+  printf("Wp enter: %d\n",wp_id);
 }
 
 
@@ -202,6 +207,20 @@ void dronerace_periodic(void)
     posx = pos_gps->x;
     posy = pos_gps->y;
     posz = pos_gps->z; 
+    dist2target = sqrtf((posx-waypoints_circle[wp_id].wp_x)*(posx-waypoints_circle[wp_id].wp_x)+(posy-waypoints_circle[wp_id].wp_y)*(posy-waypoints_circle[wp_id].wp_y));
+
+    if(dist2target<=1){
+      if(wp_id<(MAX_GATES-1)){
+        wp_id+=1; 
+      }
+      else{
+        wp_id=0; 
+      }
+      pred_inputs.range_a= -30*3.145/180.0;
+      pred_inputs.range_b= 30*3.145/180.0;
+      printf("t: %f, new wp: %d\n",get_sys_time_float(),wp_id);
+    }
+    
   filter_predict(input_phi, input_theta, input_psi, dt);
 
   

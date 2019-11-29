@@ -26,6 +26,8 @@
     <module name="gps" type="datalink"/>
     <module name="stabilization" type="indi_simple"/>
     <module name="stabilization" type="rate_indi"/>
+    <module name="sys_mon" />
+
     <!--module name="stabilization" type="int_quat"/-->
 
     <!--module name="ahrs" type="int_cmpl_quat">
