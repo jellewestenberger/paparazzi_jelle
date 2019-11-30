@@ -1,6 +1,8 @@
 // for jungle gate:
 #define UPPER_GATE 0
 #define LOWER_GATE 1
+
+#include <stdbool.h>
 extern int flagHighOrLowGate;
 
 struct dronerace_fp_struct
@@ -42,7 +44,7 @@ struct jungle_gate_struct
 // Variables
 extern struct dronerace_fp_struct dr_fp;
 
-#define MAX_GATES 4
+#define MAX_GATES 2
 
 #define REGULAR 0
 #define JUNGLE 1
@@ -70,8 +72,10 @@ extern struct dronerace_flightplan_item_struct waypoints_dr[MAX_GATES];
 extern struct jungle_gate_struct jungleGate;
 extern struct predict_simpleWP_struct waypoints_circle[MAX_GATES]; 
 extern int wp_id;
+extern bool gate_reset; 
 // Functions
 extern void flightplan_reset(void);
 extern void flightplan_run(void);
 extern void resetJungleGate(void);
+
 // extern void flightplan_list(void);

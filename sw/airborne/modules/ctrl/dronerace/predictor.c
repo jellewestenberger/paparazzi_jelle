@@ -58,9 +58,8 @@ float predict(float roll_cmd, float xi, float yi,float v, float tx,float ty, flo
 
         float d2 = (tx-x)*(tx-x)+(ty-y)*(ty-y);
         
-        // fprintf(predic_prop_t,"%f, %f\n",tx,ty)s;
+
         // fprintf(predic_prop_t,"%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",x,y,xi,yi,v,phi,roll_cmd,get_sys_time_float(),d2,tx,ty,phi_i);
-        //  printf("tx: %f, ty: %f\n",tx,ty);
         if(d2<apo2){
             apo2= d2;
             
@@ -86,12 +85,12 @@ float find_roll(struct predict_input findroll_input) {
     float ty = findroll_input.ty;
     float phi = findroll_input.phi;
     float psi = findroll_input.psi;
-    // printf("test4");
+    
     float best = 0; 
     float bestcost = 1e30; 
     float a = findroll_input.range_a;
     float b = findroll_input.range_b;
-    printf("range a: %f, range b: %f\n",a*180./3.1459,b*180.0/3.1459);
+    
    
     
    
@@ -116,7 +115,7 @@ float find_roll(struct predict_input findroll_input) {
         if(fabs(b-a)<0.001){
             break;
         }   
-        // printf("phi: %f\n",phi);
+        
 
     }
     return best; 

@@ -45,7 +45,7 @@ static void open_log(void)
 // Slow speed
 #define CTRL_MAX_SPEED  6.0             // m/s
 #define CTRL_MAX_PITCH  RadOfDeg(18)    // rad
-#define CTRL_MAX_ROLL   RadOfDeg(45)    // rad
+#define CTRL_MAX_ROLL   RadOfDeg(35)    // rad
 #define CTRL_MAX_R      RadOfDeg(90)    // rad/sec
 
 float bound_angle(float angle, float max_angle){
@@ -103,13 +103,15 @@ float bound_f(float val, float min, float max) {
 #define KD_VEL_Y  0.05
 #define radius_des 2
 float lookahead = 25 * PI/180.0;
-#define PITCHFIX  -8 * PI/180.0
+#define PITCHFIX  -5 * PI/180.0
 #define DIRECTION 1 // 1 for clockwise, -1 for counterclockwise
 float posx_old = 1234234;
 float posy_old = 1123;
 float yaw_direction=1;
 float phi_meas_avg; 
+float psi_meas_avg; 
 float avg_cntr=1;
+bool avged = false; 
 void control_run(float dt)
 {
 
@@ -135,40 +137,10 @@ void control_run(float dt)
    // transform  velocity to body frame 
   //  float vxb = dr_state.vx*(cosf(theta_meas)*cosf(psi_meas))+dr_state.vy*cosf(theta_meas)*sinf(psi_meas);
    float vxb_plane = dr_state.vx*(cosf(psi_meas))+dr_state.vy*sinf(psi_meas); //body vx in plane of circle 
-  //  float vyb = dr_state.vx*(sinf(phi_meas)*sinf(theta_meas)*cosf(psi_meas)-cosf(phi_meas)*sinf(psi_meas)) +
-  //   dr_state.vy * (sinf(phi_meas)*sinf(theta_meas)*sinf(psi_meas)+cosf(phi_meas)*cosf(psi_meas)); 
 
-  float dist2target = sqrtf(dr_state.x * dr_state.x + dr_state.y*dr_state.y);
-  float absvel = (dr_state.vx * dr_state.vx + dr_state.vy*dr_state.vy);
-  float radiuserror = (dist2target-radius_des);
-
-
-  float phase_angle = atan2f(dr_state.y,dr_state.x); 
-  float Rx = radius_des * cosf(phase_angle);
-  float Ry = radius_des * sinf(phase_angle);
-  float perpx = dr_state.vx; //perpx and perpy are the vector components perpendicular to the radius which should be the ideal airspeed. vx is chosen so that it points in the right direction
-  float perpy = (-dr_state.vx * Rx)/Ry;
-
-  float ang1 = acosf(perpx/(sqrtf(1*1)*sqrtf(perpx*perpx+perpy*perpy)));  //angle with x-axis
-  float ang2 = acosf((dr_state.vx)/(1*sqrtf(dr_state.vx*dr_state.vx+dr_state.vy*dr_state.vy)));
-  float ang = (ang1 - ang2); // angle between current velocity and desired velocity vector 
-
-  float r_error_x=dr_state.x - Rx;// radiuserror * cosf(phase_angle);
-  float r_error_y=dr_state.y - Ry;//radiuserror * sinf(phase_angle);
-
-  float rx = r_error_x - dr_state.x; //translate error to body 
-  float ry = r_error_y - dr_state.y;
-
-  //rotate error to body
-  float rxb = rx*cosf(theta_meas)*cosf(psi_meas)+ry*cosf(theta_meas)*sinf(psi_meas);
-  float ryb = rx*(sinf(phi_meas)*sinf(theta_meas)*cosf(psi_meas)-cosf(phi_meas)*sinf(psi_meas)) + ry*(sinf(phi_meas)*sinf(theta_meas)*sinf(psi_meas)+cosf(phi_meas)*cosf(psi_meas));
-  
-
-  float centriterm = DIRECTION*atan2f(absvel * cosf(dr_state.theta), (abs(GRAVITY) * dist2target));
 
  
  // from predictor
-   static float roll = 0;
 
    // import
    
@@ -186,43 +158,47 @@ void control_run(float dt)
   pred_inputs.yi = dr_state.y;
   pred_inputs.tx = waypoints_circle[wp_id].wp_x;
   pred_inputs.ty = waypoints_circle[wp_id].wp_y;
-  pred_inputs.phi = phi_meas; 
-  pred_inputs.psi = psi_meas; 
-  
+  if(avged){
+    pred_inputs.phi = phi_meas_avg; 
+    pred_inputs.psi = psi_meas_avg; 
+    avged = false; 
+    
+  }
+  else{
+    pred_inputs.phi = phi_meas;
+    pred_inputs.psi = psi_meas;
+  }
   work = true;
   // printf("optimized roll: %f\n",optimized_roll);
   optimized_roll=bound_angle(optimized_roll,CTRL_MAX_ROLL);
-  dr_control.phi_cmd  = optimized_roll;// find_roll(vxb_plane,phi_meas,psi_meas,dr_state.x,dr_state.y,0.0,0.0);
-  pred_inputs.range_a = optimized_roll - 5 * d2r;
-  pred_inputs.range_b = optimized_roll + 5 * d2r;
+  dr_control.phi_cmd  = optimized_roll;
+  if(gate_reset){
+    pred_inputs.range_a = - CTRL_MAX_ROLL;
+    pred_inputs.range_b = CTRL_MAX_ROLL;
+  }
+  else{
+  pred_inputs.range_a = optimized_roll - 3 * d2r;
+  pred_inputs.range_b = optimized_roll + 3 * d2r;
+  }
   posx_old=dr_state.x;
   posy_old=dr_state.y;
   
   phi_meas_avg=0;
-  avg_cntr = 1.0; 
+  psi_meas_avg=0;
+  avg_cntr = 0; 
   }
   else{ //if no new position measurements are available use this loop to average the roll measurements; 
-    phi_meas_avg += phi_meas/avg_cntr; 
+    phi_meas_avg = ((phi_meas_avg*(avg_cntr))+phi_meas)/(avg_cntr+1); 
+    psi_meas_avg =((psi_meas_avg*(avg_cntr))+psi_meas)/(avg_cntr+1); 
+    printf("phi_meas_avg: %f , phi_meas: %f \n psi_meas_avg: %f, psi_meas: %f\n avg_cntr: %f\n",phi_meas_avg,phi_meas, psi_meas_avg,psi_meas,avg_cntr);
     avg_cntr+=1.0;
+    avged = true;
   }
   
   
 
-  
   dr_control.phi_cmd = bound_angle(dr_control.phi_cmd,CTRL_MAX_ROLL);
 
-  POS_I = POS_I + radiuserror/512.0;
-  
-  if(ang>(PI*30.0/180.)){
-    ang = PI * 30.0/180.;
-  }
-  if(ang<(PI*-30.0/180.)){
-    ang = PI * -30.0/180.;
-  }
-  if(isnan(ang)){
-    ang=0;
-  }
-  lookI = lookI + ang/512.0;
   
 
   //from predictor:  
@@ -236,9 +212,7 @@ void control_run(float dt)
 
   // printf("tx: %f, pos_x: %f, ty: %f, posy: %f, roll_cmd: %f, roll: %f, psi_cmd: %f, psi: %f \n",0,dr_state.x,0,dr_state.y,test_roll*r2d,phi_meas*r2d,dr_control.psi_cmd*r2d,psi_meas*r2d);
 
-  // printf(" yaw_cmd: %f, yaw_meas: %f\n",dr_control.psi_cmd*r2d,dr_state.psi*r2d);
   static int counter = 0;
-  // printf("x: %f, y: %f\n",dr_state.x,dr_state.y);
   fprintf(predic_logger, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n", get_sys_time_float(),dr_state.x,dr_state.y,dr_control.phi_cmd,dr_control.theta_cmd,dr_control.psi_cmd, phi_meas, theta_meas, psi_meas, dr_state.vx, dr_state.vy,vxb_plane);
   counter++;
   

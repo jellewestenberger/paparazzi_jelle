@@ -26,10 +26,12 @@ const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
 
 struct predict_simpleWP_struct waypoints_circle[MAX_GATES] = { 
   //id, x,  y 
-    {0, 2.75,  0},
-    {1, 0.25,  -3.1},
-    {2, -2.85,  -1},
-    {3, -0.25,  2.7},
+    // {0, 2.75,  0},
+    // {1, 0.25,  -3.1},
+    // {2, -2.85,  -1},
+    // {3, -0.25,  2.7},
+    {0, 2., -1.2},
+    {1, -2,1.2},
 };
 
 // Note: pprz has positive Z here, while jevois has negative Z
