@@ -27,7 +27,7 @@ static void open_log(void)
   char filename3[512];
   
   // Check for available files
-  sprintf(filename, "%s/%s.csv", STRINGIFY(FILE_LOGGER_PATH), "lllllog_file");
+  sprintf(filename, "%s/%s.csv", STRINGIFY(FILE_LOGGER_PATH), "log_file");
   sprintf(filename2, "%s/%s.csv", STRINGIFY(FILE_LOGGER_PATH), "predict_prop");
   sprintf(filename3, "%s/%s.csv", STRINGIFY(FILE_LOGGER_PATH), "predict_debug");
 
@@ -152,12 +152,28 @@ void control_run(float dt)
    
 
   // export -> t
+
+
+ 
+
   if((dr_state.x!=posx_old)&&(dr_state.y!=posy_old)){ //only run optimizer if a new position reading is available
   pred_inputs.v = vxb_plane;
   pred_inputs.xi = dr_state.x; 
   pred_inputs.yi = dr_state.y;
   pred_inputs.tx = waypoints_circle[wp_id].wp_x;
   pred_inputs.ty = waypoints_circle[wp_id].wp_y;
+
+   if(gate_reset){
+    pred_inputs.range_a = - CTRL_MAX_ROLL;
+    pred_inputs.range_b = CTRL_MAX_ROLL;
+    printf("Gate reset, a: %f ,b: %f\n",pred_inputs.range_a,pred_inputs.range_b);
+    gate_reset = false ;
+    }
+  else{
+    pred_inputs.range_a = optimized_roll - 3 * d2r;
+    pred_inputs.range_b = optimized_roll + 3 * d2r;
+    }
+    
   if(avged){
     pred_inputs.phi = phi_meas_avg; 
     pred_inputs.psi = psi_meas_avg; 
@@ -168,18 +184,14 @@ void control_run(float dt)
     pred_inputs.phi = phi_meas;
     pred_inputs.psi = psi_meas;
   }
+  
+
+
   work = true;
   // printf("optimized roll: %f\n",optimized_roll);
   optimized_roll=bound_angle(optimized_roll,CTRL_MAX_ROLL);
   dr_control.phi_cmd  = optimized_roll;
-  if(gate_reset){
-    pred_inputs.range_a = - CTRL_MAX_ROLL;
-    pred_inputs.range_b = CTRL_MAX_ROLL;
-  }
-  else{
-  pred_inputs.range_a = optimized_roll - 3 * d2r;
-  pred_inputs.range_b = optimized_roll + 3 * d2r;
-  }
+
   posx_old=dr_state.x;
   posy_old=dr_state.y;
   
@@ -190,7 +202,7 @@ void control_run(float dt)
   else{ //if no new position measurements are available use this loop to average the roll measurements; 
     phi_meas_avg = ((phi_meas_avg*(avg_cntr))+phi_meas)/(avg_cntr+1); 
     psi_meas_avg =((psi_meas_avg*(avg_cntr))+psi_meas)/(avg_cntr+1); 
-    printf("phi_meas_avg: %f , phi_meas: %f \n psi_meas_avg: %f, psi_meas: %f\n avg_cntr: %f\n",phi_meas_avg,phi_meas, psi_meas_avg,psi_meas,avg_cntr);
+    // printf("phi_meas_avg: %f , phi_meas: %f \n psi_meas_avg: %f, psi_meas: %f\n avg_cntr: %f\n",phi_meas_avg,phi_meas, psi_meas_avg,psi_meas,avg_cntr);
     avg_cntr+=1.0;
     avged = true;
   }
@@ -213,7 +225,7 @@ void control_run(float dt)
   // printf("tx: %f, pos_x: %f, ty: %f, posy: %f, roll_cmd: %f, roll: %f, psi_cmd: %f, psi: %f \n",0,dr_state.x,0,dr_state.y,test_roll*r2d,phi_meas*r2d,dr_control.psi_cmd*r2d,psi_meas*r2d);
 
   static int counter = 0;
-  fprintf(predic_logger, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n", get_sys_time_float(),dr_state.x,dr_state.y,dr_control.phi_cmd,dr_control.theta_cmd,dr_control.psi_cmd, phi_meas, theta_meas, psi_meas, dr_state.vx, dr_state.vy,vxb_plane);
+  fprintf(file_logger_t, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n", get_sys_time_float(),dr_state.x,dr_state.y,dr_control.phi_cmd,dr_control.theta_cmd,dr_control.psi_cmd, phi_meas, theta_meas, psi_meas, dr_state.vx, dr_state.vy,vxb_plane);
   counter++;
   
 

@@ -8,6 +8,9 @@
 #define GR (1.0 + sqrtf(5))/2.0
 
 #define MAX_ROLL_RATE 50*d2r
+#define GOLDENSECT 1;
+#define BISECT 2; 
+#define QUARTSECT 3;
 
 
 
@@ -64,11 +67,12 @@ float predict(float roll_cmd, float xi, float yi,float v, float tx,float ty, flo
             apo2= d2;
             
         }
-        // else if (d2>apo2) //stop propagating when distance starts to increase again [EXPERIMENT]
-        // {
-        //     break;
-        // }
-        
+        /*
+        else if (d2>apo2) //stop propagating when distance starts to increase again [EXPERIMENT]
+        {
+            break;
+        }
+        */
         
 
     }
@@ -78,6 +82,7 @@ float predict(float roll_cmd, float xi, float yi,float v, float tx,float ty, flo
 
 
 float find_roll(struct predict_input findroll_input) {
+    int type = GOLDENSECT;
     float xi = findroll_input.xi;
     float yi = findroll_input.yi; 
     float v  = findroll_input.v; 
@@ -98,54 +103,79 @@ float find_roll(struct predict_input findroll_input) {
     float cost_b = predict(b,xi,yi, v, tx, ty, phi, psi); 
     
     //normal bisection;
-    for(int j=1; j<20; j=j+1){
-        if(cost_a<cost_b){
-            b = (a+b)/2.0;
-            cost_b = predict(b,xi,yi, v, tx, ty, phi, psi); 
-            best=a; 
-            bestcost=cost_a;
-        }
-        else{
-            a= (a+b)/2.0;
-            cost_a= predict(a,xi,yi, v, tx, ty, phi, psi); 
-            best=b;
-            bestcost=cost_b;
-        }
-        
-        if(fabs(b-a)<0.001){
-            break;
-        }   
-        
+    if(type == 2){
+        for(int j=1; j<20; j=j+1){
+            if(cost_a<cost_b){
+                b = (a+b)/2.0;
+                cost_b = predict(b,xi,yi, v, tx, ty, phi, psi); 
+                best=a; 
+                bestcost=cost_a;
+            }
+            else{
+                a= (a+b)/2.0;
+                cost_a= predict(a,xi,yi, v, tx, ty, phi, psi); 
+                best=b;
+                bestcost=cost_b;
+            }
+            
+            if(fabs(b-a)<0.001){
+                break;
+            }   
+            
 
+        }
     }
-    return best; 
-   
+
+    //quarter bisection;
+    if(type == 3){
+        for(int j=1; j<20; j=j+1){
+            if(cost_a<cost_b){
+                b = (a+2*b)/3.0;
+                cost_b = predict(b,xi,yi, v, tx, ty, phi, psi); 
+                best=a; 
+                bestcost=cost_a;
+            }
+            else{
+                a= (2*a+b)/3.0;
+                cost_a= predict(a,xi,yi, v, tx, ty, phi, psi); 
+                best=b;
+                bestcost=cost_b;
+            }
+            
+            if(fabs(b-a)<0.001){
+                break;
+            }   
+            
+
+        }
     }
-    /* //golden section
-    for(int j=1; j<10; j=j+1){
-        float c = b - (b-a)/GR;
-        float d = a + (b-a)/GR;
 
-        float cost_c = predict(c,xi,yi, v, tx, ty, phi, psi);
-        
-        float cost_d = predict(d, xi, yi, v,tx, ty,phi,psi);
+    //golden section
+    if(type==1){
+        for(int j=1; j<20; j=j+1){
+            float c = b - (b-a)/GR;
+            float d = a + (b-a)/GR;
 
-        if(cost_c<cost_d){
-            a = d; 
-            best = c;
-            bestcost=cost_c;
+            float cost_c = predict(c,xi,yi, v, tx, ty, phi, psi);
+            
+            float cost_d = predict(d, xi, yi, v,tx, ty,phi,psi);
+
+            if(cost_c<cost_d){
+                a = d; 
+                best = c;
+                bestcost=cost_c;
+            }
+            else{
+                b = c; 
+                best = d; 
+                bestcost=cost_d;
+            }
+            // fprintf(prediction_logger_t,"%d, %f, %f\n",optcounter,best,bestcost);
+            if((c-d)<0.1*d2r){
+                break;
+            }
         }
-        else{
-            b = c; 
-            best = d; 
-            bestcost=cost_d;
-        }
-        // fprintf(prediction_logger_t,"%d, %f, %f\n",optcounter,best,bestcost);
-        if((c-d)<0.1*d2r){
-            break;
-        }*/
-        
-       
+    }
 
     // optcounter=optcounter+1;
     /*
@@ -157,7 +187,9 @@ float find_roll(struct predict_input findroll_input) {
         }
     }
     */
-
+return best; 
+   
+    }
    
 
 

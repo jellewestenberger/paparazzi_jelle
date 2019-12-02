@@ -220,9 +220,7 @@ void dronerace_periodic(void)
       gate_reset = true; // gate reset is used to reset the bisection range 
       printf("t: %f, new wp: %d, x: %f, y: %f \n",get_sys_time_float(),wp_id,waypoints_circle[wp_id].wp_x,waypoints_circle[wp_id].wp_y);
     }
-    else if(gate_reset){
-      gate_reset = false;   
-    }
+   
     
   filter_predict(input_phi, input_theta, input_psi, dt);
 
