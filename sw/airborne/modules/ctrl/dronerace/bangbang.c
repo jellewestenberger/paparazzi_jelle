@@ -161,7 +161,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
         t_s = (t0+t1)/2.0;
         float t_s_old = 1e2;
         
-        while(fabs(E_pos)>error_thresh&&fabs(t_s-t_s_old)>2*dtt){
+        while(fabs(t_s-t_s_old)>2*dtt){
             t_s_old=t_s; 
             E_pos=get_E_pos(v_desired, satangle*signcorrsat);
             // printf("satdim: %i, E_pos: %f, t_s: %f , t0: %f, t1: %f\n",dim,E_pos*signcorrsat,t_s,t0,t1);
@@ -189,7 +189,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
             angc=(ang0+ang1)/2.0;
             angc_old = 1e9;
 
-            while((fabs(E_pos)>error_thresh )&& fabs(angc-angc_old)>(0.1*d2r)){
+            while(fabs(angc-angc_old)>(0.1*d2r)){
                 angc_old=angc;                
                 E_pos = get_E_pos(v_desired,angc);
 
@@ -217,7 +217,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
     angc_old = 1e9;
     E_pos = 1e9;
 
-    while(fabs(E_pos)>error_thresh&&fabs(angc-angc_old)>0.1*d2r){
+    while(fabs(angc-angc_old)>0.1*d2r){
         angc_old=angc;
         E_pos=get_E_pos(v_desired,angc); //v_desired doesn't do anything here. The point is to reach the target at t_target.
         if(E_pos>0){
@@ -234,7 +234,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
 
     // Check if we need to brake    
     if(!brake){
-        if(t_s<0.3 && t_s<t_target){
+        if(t_s<0.15 && t_s<t_target){
             brake=true;
             if(!controllerstate.in_transition){
                
@@ -293,7 +293,7 @@ float get_E_pos(float Vd, float angle){
 }
 float predict_path_analytical(float angle,float Vd){
    
-    #ifdef USETHRUSTeALTCTRL //use the thrust as commanded by the altitude controller 
+    #ifdef USETHRUSTALTCTRL //use the thrust as commanded by the altitude controller 
         T= (thrust_cmd/HOVERTHRUST)*mass*g*cosf(dr_state.phi)*cosf(dr_state.theta); // - earth z 
     #else
         T=mass*g;            // - earth z
@@ -378,7 +378,8 @@ float get_velocity_analytical(float t){
 float get_time_analytical(float V){
     float t_t = (-mass/Cd)*logf((V-(T/Cd))/(constant.c1*(-Cd/mass)));
     if(isnan(t_t)){
-        t_t = (-mass/Cd)*logf((V-(T/Cd))/(-1*constant.c1*(-Cd/mass))); //TODO: temporary fix that seems to work well in practice. Need to look into this more thoroughly
+        // t_t = (-mass/Cd)*logf((V-(T/Cd))/(-1*constant.c1*(-Cd/mass))); //TODO: temporary fix that seems to work well in practice. Need to look into this more thoroughly
+        t_t = 0; 
     }
     return t_t;
 }
