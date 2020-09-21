@@ -63,7 +63,7 @@ float ang1 ;
 float angc ;
 float angc_old ;
 float E_pos= 1e9; 
-
+int test_direction;
 float ys;
 float vs;
 
@@ -174,6 +174,12 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
             t_s=(t0+t1)/2.0;            
         }
         bang_ctrl[dim]=satangle*signcorrsat;
+        if(test_direction==0){
+            printf("backward compensation\n");
+        }
+        else if(test_direction==1){
+            printf("backward compensation\n");
+        }
     }
     
     //if braking:
@@ -320,15 +326,18 @@ float predict_path_analytical(float angle,float Vd){
             if(controllerstate.apply_compensation){
                 
                 if(dim==0){
-                    if(angle<0){
+                    if(vs>=0){
                         compensation_estimator= &estimator_pitch_fwd;
+                        test_direction=0;
                     }
                     else{
                         compensation_estimator=&estimator_pitch_bckwd;
+                        test_direction=1;
                     } 
                 }
                 else{
                     compensation_estimator=&estimator_roll;
+                    test_direction=3;
                 }
 
                 find_losses(vs,-2*angle,compensation_estimator); // -2 because delta_angle in estimator is final angle - initial angle  
